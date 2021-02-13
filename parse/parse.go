@@ -34,7 +34,7 @@ func Partial(path string) []string {
 		}
 	}
 
-	return files
+	return removeDuplicates(files)
 }
 
 func removeDuplicates(files []string) []string {
