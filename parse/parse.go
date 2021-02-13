@@ -10,11 +10,31 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
-func Files(path string) []string {
+// All gets all the files needed starting from the main package
+func All(path string) []string {
 	mod := getMod()
 
 	files := getFiles(path, mod, "main")
 	return removeDuplicates(files)
+}
+
+// Partial get all the files needed starting from a certain file
+func Partial(path string) []string {
+	mod := getMod()
+
+	imports, files := getImportsFile(path)
+
+	for _, i := range imports {
+		// Remove the parenthesis
+		i = i[1 : len(i)-1]
+
+		// Check if the first part of the import statement contains the current package
+		if len(i) > len(mod) && i[:len(mod)] == mod {
+			files = append(files, getFiles("."+i[len(mod):], mod, getPkg(i))...)
+		}
+	}
+
+	return files
 }
 
 func removeDuplicates(files []string) []string {
@@ -87,6 +107,7 @@ func getMod() string {
 	return mod.Module.Mod.Path
 }
 
+// Get the imports of all the files in a directory
 func getImports(dir, p string) ([]string, []string) {
 	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ImportsOnly)
@@ -107,6 +128,24 @@ func getImports(dir, p string) ([]string, []string) {
 				}
 			}
 		}
+	}
+
+	return imports, files
+}
+
+// Get the imports of a file
+func getImportsFile(path string) ([]string, []string) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, nil, parser.ImportsOnly)
+	if err != nil {
+		fmt.Printf("Error parsing files: %v\n", err)
+		os.Exit(1)
+	}
+
+	imports := []string{}
+	files := []string{}
+	for _, i := range file.Imports {
+		imports = append(imports, i.Path.Value)
 	}
 
 	return imports, files

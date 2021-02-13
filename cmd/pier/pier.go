@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	files := parse.Files("cmd/pier")
+	files := parse.All("cmd/pier")
 
 	watch.Watch(files)
 }
