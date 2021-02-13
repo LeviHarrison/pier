@@ -4,6 +4,6 @@ build:
 	go build -o dist/pier github.com/leviharrison/pier/cmd/pier
 
 start:
-	dist/pier
+	dist/pier $(ARGS)
 
 run: build start

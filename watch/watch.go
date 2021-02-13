@@ -35,7 +35,6 @@ func Watch(files []string) {
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				fmt.Println("modified file:", event.Name)
 				files, additions = modifyList(files, parse.Partial(event.Name))
-				fmt.Println(files, additions)
 
 				for _, file := range additions {
 					err := watcher.Add(file)
