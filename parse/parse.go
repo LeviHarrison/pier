@@ -7,15 +7,18 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/leviharrison/pier"
 	"golang.org/x/mod/modfile"
 )
 
 // All gets all the files needed starting from the main package
-func All(path string) []string {
+func All(targets pier.Targets) {
 	mod := getMod()
 
-	files := getFiles(path, mod, "main")
-	return removeDuplicates(files)
+	for _, target := range targets {
+		files := getFiles(target.MainDir, mod, "main")
+		target.Files = removeDuplicates(files)
+	}
 }
 
 // Partial get all the files needed starting from a certain file

@@ -1,31 +1,23 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
-	"github.com/docker/docker/client"
+	"github.com/leviharrison/pier"
 	"github.com/leviharrison/pier/parse"
 	"github.com/leviharrison/pier/watch"
 )
 
+var targets pier.Targets
+
 const help = `Pier enables intelligent reload for Docker
 
-Usage: pier /directory/of/your/main/package your.Dockerfile
-`
+Usage: pier directory/of/your/main/package your.Dockerfile build/context`
 
 func main() {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		fmt.Printf("Error initializing docker client: %v\n", err)
-		os.Exit(1)
-	}
-
-	ctx := context.Background()
-
 	args := os.Args[1:]
-	if len(args) < 1 {
+	if len(args) < 3 {
 		fmt.Println(help)
 		os.Exit(0)
 	}
@@ -34,7 +26,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	files := parse.All(args[0])
+	parse.All(targets)
+	watch.Watch(targets)
+}
 
-	watch.Watch(files)
+func register(args []string) {
+	target := &pier.Target{MainDir: args[0], Dockerfile: args[1], Context: args[2]}
+
+	targets = append(targets, target)
+	fmt.Printf("Registered new target %v with main located in %v and the context %v", target.MainDir, target.Dockerfile, target.Context)
 }

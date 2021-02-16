@@ -5,11 +5,14 @@ import (
 	"os"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/leviharrison/pier"
 	"github.com/leviharrison/pier/parse"
 )
 
+var additions []string
+
 // Watch watches the files
-func Watch(files []string) {
+func Watch(targets pier.Targets) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		fmt.Printf("Error creating watcher: %v\n", err)
@@ -17,11 +20,13 @@ func Watch(files []string) {
 	}
 	defer watcher.Close()
 
-	for _, file := range files {
-		err := watcher.Add(file)
-		if err != nil {
-			fmt.Printf("Error watching file %v: %v\n", file, err)
-			os.Exit(1)
+	for _, target := range targets {
+		for _, file := range target.Files {
+			err := watcher.Add(file)
+			if err != nil {
+				fmt.Printf("Error watching file %v: %v\n", file, err)
+				os.Exit(1)
+			}
 		}
 	}
 
@@ -34,13 +39,17 @@ func Watch(files []string) {
 
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				fmt.Println("modified file:", event.Name)
-				files, additions = modifyList(files, parse.Partial(event.Name))
 
-				for _, file := range additions {
-					err := watcher.Add(file)
-					if err != nil {
-						fmt.Printf("Error watching file %v: %v\n", file, err)
-						os.Exit(1)
+				targets := findTargets(event.Name, targets)
+				for _, target := range targets {
+					target.Files, additions = modifyList(target.Files, parse.Partial(event.Name))
+
+					for _, file := range additions {
+						err := watcher.Add(file)
+						if err != nil {
+							fmt.Printf("Error watching file %v: %v\n", file, err)
+							os.Exit(1)
+						}
 					}
 				}
 			}
@@ -64,5 +73,17 @@ func modifyList(files, newFiles []string) ([]string, []string) {
 	return files, newFiles
 }
 
-// For some reason, Go won't let me modify the files variable and define the additions variable in the same statement, so I must define it over here
-var additions []string
+// findTargets finds what targets depend on a given file
+func findTargets(found string, targets pier.Targets) pier.Targets {
+	result := []*pier.Target{}
+	for _, target := range targets {
+		for _, file := range target.Files {
+			if found == file {
+				result = append(result, target)
+				continue
+			}
+		}
+	}
+
+	return result
+}
