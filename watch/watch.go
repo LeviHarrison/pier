@@ -3,26 +3,51 @@ package watch
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/leviharrison/pier"
 	"github.com/leviharrison/pier/parse"
+	"github.com/radovskyb/watcher"
 )
 
 var additions []string
 
 // Watch watches the files
 func Watch(targets pier.Targets) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		fmt.Printf("Error creating watcher: %v\n", err)
-		os.Exit(1)
-	}
-	defer watcher.Close()
+	w := watcher.New()
+	defer w.Close()
+
+	go func() {
+		for {
+			select {
+			case event := <-w.Event:
+				if event.Op == watcher.Write {
+					targets := findTargets(event.Path, targets)
+					for _, target := range targets {
+						target.Files, additions = modifyList(target.Files, parse.Partial(event.Path))
+
+						for _, file := range additions {
+							err := w.Add(file)
+							if err != nil {
+								fmt.Printf("Error watching file %v: %v\n", file, err)
+								os.Exit(1)
+							}
+						}
+					}
+				}
+			case err := <-w.Error:
+				fmt.Printf("Error with watcher: %v\n", err)
+				os.Exit(1)
+			case <-w.Closed:
+				fmt.Println("Watcher closed")
+			}
+		}
+	}()
 
 	for _, target := range targets {
 		for _, file := range target.Files {
-			err := watcher.Add(file)
+			err := w.Add(file)
 			if err != nil {
 				fmt.Printf("Error watching file %v: %v\n", file, err)
 				os.Exit(1)
@@ -30,30 +55,10 @@ func Watch(targets pier.Targets) {
 		}
 	}
 
-	for {
-		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				return
-			}
-
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				fmt.Println("modified file:", event.Name)
-
-				targets := findTargets(event.Name, targets)
-				for _, target := range targets {
-					target.Files, additions = modifyList(target.Files, parse.Partial(event.Name))
-
-					for _, file := range additions {
-						err := watcher.Add(file)
-						if err != nil {
-							fmt.Printf("Error watching file %v: %v\n", file, err)
-							os.Exit(1)
-						}
-					}
-				}
-			}
-		}
+	err := w.Start(time.Millisecond * 100)
+	if err != nil {
+		fmt.Printf("Error with watcher: %v\n", err)
+		os.Exit(1)
 	}
 }
 
@@ -78,7 +83,12 @@ func findTargets(found string, targets pier.Targets) pier.Targets {
 	result := []*pier.Target{}
 	for _, target := range targets {
 		for _, file := range target.Files {
-			if found == file {
+			abs, err := filepath.Abs(found)
+			if err != nil {
+				fmt.Printf("Error finding absolute path for %v: %v\n", file, err)
+				os.Exit(1)
+			}
+			if found == abs {
 				result = append(result, target)
 				continue
 			}

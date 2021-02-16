@@ -10,7 +10,7 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.3+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/fsnotify/fsnotify v1.4.9
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/moby/sys/mount v0.2.0 // indirect
@@ -18,9 +18,11 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
+	github.com/radovskyb/watcher v1.0.7
 	golang.org/x/mod v0.4.1
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	google.golang.org/grpc v1.35.0 // indirect
+	gopkg.in/fsnotify.v1 v1.4.7
 	gotest.tools/v3 v3.0.3 // indirect
 )
