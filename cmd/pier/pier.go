@@ -26,6 +26,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	register(args)
+
 	parse.All(targets)
 	watch.Watch(targets)
 }
@@ -34,5 +36,5 @@ func register(args []string) {
 	target := &pier.Target{MainDir: args[0], Dockerfile: args[1], Context: args[2]}
 
 	targets = append(targets, target)
-	fmt.Printf("Registered new target %v with main located in %v and the context %v", target.MainDir, target.Dockerfile, target.Context)
+	fmt.Printf("Registered new target %v with main located in %v and the context %v\n", target.MainDir, target.Dockerfile, target.Context)
 }
