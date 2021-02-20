@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/leviharrison/pier"
+	"github.com/leviharrison/pier/image"
 	"github.com/leviharrison/pier/parse"
 	"github.com/leviharrison/pier/watch"
 )
@@ -29,6 +30,7 @@ func main() {
 	register(args)
 
 	parse.All(targets)
+	image.NewClient()
 	watch.Watch(targets)
 }
 

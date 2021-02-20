@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/leviharrison/pier"
+	"github.com/leviharrison/pier/image"
 	"github.com/leviharrison/pier/parse"
 	"github.com/radovskyb/watcher"
 )
@@ -24,9 +25,9 @@ func Watch(targets pier.Targets) {
 			case event := <-w.Event:
 				if event.Op == watcher.Write {
 					targets := findTargets(event.Path, targets)
+
 					for _, target := range targets {
 						target.Files, additions = modifyList(target.Files, parse.Partial(event.Path))
-
 						for _, file := range additions {
 							err := w.Add(file)
 							if err != nil {
@@ -34,6 +35,8 @@ func Watch(targets pier.Targets) {
 								os.Exit(1)
 							}
 						}
+
+						image.Build(target)
 					}
 				}
 			case err := <-w.Error:
@@ -81,6 +84,7 @@ func modifyList(files, newFiles []string) ([]string, []string) {
 // findTargets finds what targets depend on a given file
 func findTargets(found string, targets pier.Targets) pier.Targets {
 	result := []*pier.Target{}
+out:
 	for _, target := range targets {
 		for _, file := range target.Files {
 			abs, err := filepath.Abs(found)
@@ -89,8 +93,12 @@ func findTargets(found string, targets pier.Targets) pier.Targets {
 				os.Exit(1)
 			}
 			if found == abs {
+				for _, t := range result {
+					if target == t {
+						continue out
+					}
+				}
 				result = append(result, target)
-				continue
 			}
 		}
 	}

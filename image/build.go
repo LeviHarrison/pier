@@ -7,18 +7,22 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/leviharrison/pier"
 )
 
 // Build builds an image
-func Build() {
+func Build(target *pier.Target) {
+	fmt.Println("building...")
 	contents, err := archive.TarWithOptions(".", &archive.TarOptions{})
 	if err != nil {
-		fmt.Printf("error taring")
+		fmt.Printf("Error TARing: %v", err)
 		os.Exit(1)
 	}
 
 	ctx := context.Background()
-	build, err := client.ImageBuild(ctx, contents, types.ImageBuildOptions{})
+	_, err = client.ImageBuild(ctx, contents, types.ImageBuildOptions{
+		Dockerfile: target.Dockerfile,
+	})
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
